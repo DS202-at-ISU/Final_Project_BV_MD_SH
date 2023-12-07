@@ -41,17 +41,6 @@ ggplot(starbucks_data, aes(x = Calories)) +
   geom_histogram(binwidth = 50, fill = "skyblue", color = "black") +
   labs(title = "Distribution of Calories in Starbucks Beverages",
        x = "Calories", y = "Frequency")
-
-avg_calories_by_category <- starbucks_data %>%
-  group_by(Beverage_category) %>%
-  summarise(Avg_Calories = mean(Calories, na.rm = TRUE))
-
-ggplot(avg_calories_by_category, aes(x = reorder(Beverage_category, -Avg_Calories), y = Avg_Calories)) +
-  geom_bar(stat = "identity", fill = "salmon") +
-  labs(title = "Average Calories in Starbucks Beverages by Category",
-       x = "Beverage Category", y = "Average Calories") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
 ```
 
 
