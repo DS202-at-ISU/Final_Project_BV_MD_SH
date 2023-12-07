@@ -96,7 +96,14 @@ scatterplot_carbs
 
 
 ```{r}
+boxplot_calories <- ggplot(starbucks_data, aes(x = Beverage_category, y = Calories, fill = Beverage_category)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Calories by Beverage Type",
+       x = "Beverage Type", y = "Calories") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  scale_fill_discrete()  
 
+print(boxplot_calories)
 ```
 
 
