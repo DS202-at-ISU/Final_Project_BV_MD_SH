@@ -1,0 +1,102 @@
+---
+title: 'Final Project'
+author: "Brynn VanHorn, Mackenzie Donaubauer, Samuel Husted"
+date: "12/5/2023"
+output: html_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## The Dataset
+
+Explanation here
+
+```{r}
+library(tidyverse)
+starbucks_data <- read.csv("starbucks.csv")
+
+str(starbucks_data)
+summary(starbucks_data)
+
+head(starbucks_data)
+```
+```{r}
+numeric_columns <- c("Total.Fat..g.", "Caffeine..mg.")
+starbucks_data[numeric_columns] <- lapply(starbucks_data[numeric_columns], as.numeric)
+
+percentage_columns <- c("Vitamin.A....DV.", "Vitamin.C....DV.", "Calcium....DV.", "Iron....DV.")
+
+starbucks_data[percentage_columns] <- lapply(starbucks_data[percentage_columns], function(x) {
+  as.numeric(sub("%", "", x))/100
+})
+
+str(starbucks_data)
+```
+
+
+```{r}
+ggplot(starbucks_data, aes(x = Calories)) +
+  geom_histogram(binwidth = 50, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of Calories in Starbucks Beverages",
+       x = "Calories", y = "Frequency")
+
+avg_calories_by_category <- starbucks_data %>%
+  group_by(Beverage_category) %>%
+  summarise(Avg_Calories = mean(Calories, na.rm = TRUE))
+
+ggplot(avg_calories_by_category, aes(x = reorder(Beverage_category, -Avg_Calories), y = Avg_Calories)) +
+  geom_bar(stat = "identity", fill = "salmon") +
+  labs(title = "Average Calories in Starbucks Beverages by Category",
+       x = "Beverage Category", y = "Average Calories") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+```{r}
+starbucks_data <- starbucks_data %>%
+  rename_all(~str_replace_all(., "[[:space:](.)]", "_"))
+
+starbucks_data <- starbucks_data %>%
+  rename_all(~str_replace_all(., "_+", "_"))
+
+starbucks_data <- starbucks_data %>%
+  rename_all(~str_replace(., "_$", ""))
+
+print(colnames(starbucks_data))
+```
+```{r}
+selected_columns <- c("Calories", "Total_Fat_g", "Sugars_g", "Total_Carbohydrates_g")
+selected_data <- starbucks_data[selected_columns]
+
+correlation_matrix <- cor(selected_data)
+print(correlation_matrix)
+
+scatterplot_totalfat <- ggplot(starbucks_data, aes(x = Total_Fat_g, y = Calories)) +
+  geom_point(color = "darkmagenta") +
+  labs(title = "Scatter Plot Matrix for Calories vs Total Fat",
+       x = "Total Fat (g)", y = "Calories")
+scatterplot_totalfat
+
+scatterplot_sugar <- ggplot(starbucks_data, aes(x = Sugars_g, y = Calories)) +
+  geom_point(color = "blue3") +
+  labs(title = "Scatter Plot Matrix for Calories vs Sugar",
+       x = "Sugars (g)", y = "Calories")
+scatterplot_sugar
+
+scatterplot_carbs <- ggplot(starbucks_data, aes(x = Total_Carbohydrates_g, y = Calories)) +
+  geom_point(color = "darkgreen") +
+  labs(title = "Scatter Plot Matrix for Calories vs Total Carbohydrates (g)",
+       x = "Total Carbohydrates (g)", y = "Calories")
+scatterplot_carbs
+```
+
+
+```{r}
+
+```
+
+
