@@ -1,7 +1,7 @@
 ---
-title: 'Final Project'
-author: "Brynn VanHorn, Mackenzie Donaubauer, Samuel Husted"
-date: "12/5/2023"
+title: 'Final Project: Analysis of Starbucks Drinks'
+author: "Team Caffeine: Brynn VanHorn, Mackenzie Donaubauer, Samuel Husted"
+date: "12/12/2023"
 output: html_document
 ---
   
@@ -9,9 +9,19 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## The Dataset
+![](/Users/brynnvanhorn/Desktop/school stuff/03_junior year/DS202/final images/starbucks-logo-png-transparent.png){width=20%}
 
-First, we grab the dataset and analyze the data.
+## Introduction
+***
+**Our Dataset:** This dataset is from [kaggle.com](kaggle.com). It includes majority of the common drinks found at Starbucks and has all the nutritional values associated with that drink. 
+
+**Why:** It is useful for those who enjoy buying drinks to know what ingredients they contain so they get their money’s worth. We can use this information to estimate how many calories make up a drink based on other nutritional values. 
+
+## Project Objective
+> How do nutritional factors contribute to calorie count? We are going to predict how many calories are in any fast food coffee drink based on the combination of other factors that make up the drink. 
+
+### Step 1: Data Loading and Inspection
+First, we grab the dataset and analyze the data. We want to undestand the structure and summary of our data set so we can properly clean or change it before further analyzation.
 
 ```{r}
 library(tidyverse)
@@ -22,8 +32,10 @@ summary(starbucks_data)
 
 head(starbucks_data)
 ```
-We clean the data by changing the type of columns from characters to numbers.
-```{r}
+
+### Step 2: Data Cleaning and Transformation
+We clean the data by changing the type of columns from characters to numbers. This will be useful for calculations between variables later on.
+```{r warning=FALSE}
 numeric_columns <- c("Total.Fat..g.", "Caffeine..mg.")
 starbucks_data[numeric_columns] <- lapply(starbucks_data[numeric_columns], as.numeric)
 
@@ -36,16 +48,7 @@ starbucks_data[percentage_columns] <- lapply(starbucks_data[percentage_columns],
 str(starbucks_data)
 ```
 
-Here we make a bar graph where x is the number of calories and y is the frequency of beverages with x number of calories.
-```{r}
-ggplot(starbucks_data, aes(x = Calories)) +
-  geom_histogram(binwidth = 50, fill = "skyblue", color = "black") +
-  labs(title = "Distribution of Calories in Starbucks Beverages",
-       x = "Calories", y = "Frequency")
-```
-
-
-We do more cleaning of the data by getting rid of the periods at the end of each column name and replacing them with one underscore.
+We do more cleaning of the data by getting rid of the periods at the end of and in between each column name and replacing them with one underscore.
 ```{r}
 starbucks_data <- starbucks_data %>%
   rename_all(~str_replace_all(., "[[:space:](.)]", "_"))
@@ -61,14 +64,66 @@ starbucks_data <- na.omit(starbucks_data)
 
 print(colnames(starbucks_data))
 ```
-Here we make a correlation matrix with columns we believe would be great candidates for determining number of calories. Then we graphed scatterplots of the top 4 highest correlations with Calories. 
+
+### Step 3: Data Exploration and Visualization
+Here we make a histogram where x is the number of calories and y is the frequency of beverages with x number of calories. It is good to interpret the distribution of Calories because this is our variable of focus.
+```{r}
+ggplot(starbucks_data, aes(x = Calories)) +
+  geom_histogram(binwidth = 50, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of Calories in Starbucks Beverages",
+       x = "Calories", y = "Frequency")
+```
+
+**Calories Histogram:** As you can see, the Calories follow a normal distribution, where there is maybe a potential outlier at the end past the 500 calorie mark. And we learned earlier in our summary code that the mean is 193.9 and the median is 185 for amount of Calories in a coffee.
+
+
+**Boxplots:** Next, we make a boxplot where we graphed the number of calories in relation to the category of beverage.
+```{r}
+boxplot_calories <- ggplot(starbucks_data, aes(x = Beverage_category, y = Calories, fill = Beverage_category)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Calories by Beverage Type",
+       x = "Beverage Type", y = "Calories") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  scale_fill_discrete()  
+
+print(boxplot_calories)
+```
+
+As you can see here, we have a widespread variety of distributions based on whta type of drink it is at Starbucks. Here is an overview of some highlighted distributions based on the boxchart:
+
+* **Longest Range:** Signature Espresso Drinks
+
+* **Shortest Range:** Coffee
+
+* **Largest Median:** Frappuccino Blended Coffee
+
+* **Smallest Median:** Coffee (2nd smallest: Shaken Iced Beverages)
+
+* **Longest IQR:** Signature Espresso Drinks and Frappuccino Blended Coffee
+
+* **Shortest IQR:** Coffee (2nd smallest: Smoothies)
+
+* **Notes:** The coffee category is plain black coffee varying 3-5 calories based on size, due to this and the fact that black coffee only haas 4 variables, it appears like a black line on the boxplot.
+
+***
+
+## Step 4: Data Analysis and Prediction
+
+Here we make a correlation matrix with columns we believe would be great candidates for determining number of calories. A correlation matrix provides a quick overview of the relationships between different variables in the dataset.Positive or negative correlation values indicate the direction and strength of the relationship between pairs of variables. Correlation analysis can be an initial step in generating hypotheses about potential relationships. It can guide further investigation and analysis. In this case, we hypothesize Sugars, Carbohydrates Cholesterol, and Total Fat have an effect on the amount of Calories in Starbucks beverages.
+
 ```{r}
 selected_columns <- c("Sodium_mg", "Cholesterol_mg", "Dietary_Fibre_g", "Protein_g", "Calcium_DV", "Calories", "Total_Fat_g", "Sugars_g", "Total_Carbohydrates_g")
 selected_data <- starbucks_data[selected_columns]
 
 correlation_matrix <- cor(selected_data)
 print(correlation_matrix)
+```
 
+Then we graphed scatterplots of the top 4 highest correlations with Calories. Why we coded our scatterplots:
+* Scatter plots are effective for visualizing relationships between two continuous variables. 
+* Including a regression line helps identify trends and patterns in the data.
+* Different colors for data points aid in distinguishing between the plots and highlight specific nutrient relationships.
+```{r}
 scatterplot_totalfat <- ggplot(starbucks_data, aes(x = Total_Fat_g, y = Calories)) +
   geom_point(color = "darkmagenta") +
   geom_smooth(method = "lm", se = FALSE, color = "red") + 
@@ -98,17 +153,6 @@ scatterplot_cholesterol <- ggplot(starbucks_data, aes(x = Cholesterol_mg, y = Ca
 scatterplot_cholesterol
 ```
 
-Here we make a boxplot where we graphed the number of calories in relation to the catagory of beverage.
-```{r}
-boxplot_calories <- ggplot(starbucks_data, aes(x = Beverage_category, y = Calories, fill = Beverage_category)) +
-  geom_boxplot() +
-  labs(title = "Boxplot of Calories by Beverage Type",
-       x = "Beverage Type", y = "Calories") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  scale_fill_discrete()  
-
-print(boxplot_calories)
-```
 
 Lastly, we grabbed real data from a Dunkin' Donuts Nutrition document and tested our accuracy of calculating the number of calories.
 ```{r}
