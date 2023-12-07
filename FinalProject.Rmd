@@ -66,21 +66,35 @@ print(correlation_matrix)
 
 scatterplot_totalfat <- ggplot(starbucks_data, aes(x = Total_Fat_g, y = Calories)) +
   geom_point(color = "darkmagenta") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") + 
   labs(title = "Scatter Plot Matrix for Calories vs Total Fat",
        x = "Total Fat (g)", y = "Calories")
 scatterplot_totalfat
 
 scatterplot_sugar <- ggplot(starbucks_data, aes(x = Sugars_g, y = Calories)) +
   geom_point(color = "blue3") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") + 
   labs(title = "Scatter Plot Matrix for Calories vs Sugar",
        x = "Sugars (g)", y = "Calories")
 scatterplot_sugar
 
 scatterplot_carbs <- ggplot(starbucks_data, aes(x = Total_Carbohydrates_g, y = Calories)) +
   geom_point(color = "darkgreen") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") + 
   labs(title = "Scatter Plot Matrix for Calories vs Total Carbohydrates (g)",
        x = "Total Carbohydrates (g)", y = "Calories")
 scatterplot_carbs
+
+carbs_linear_model <- lm(Calories ~ Total_Carbohydrates_g, data = starbucks_data)
+
+#https://www.dunkindonuts.com/content/dam/dd/pdf/nutrition.pdf
+#new_data <- data.frame(Beverage = c("Original Hot Chocolate - Medium"), Total_Carbohydrates_g = c(59))
+
+#predicted_calories <- predict(carbs_linear_model, newdata = new_data)
+#print(predicted_calories)
+
+#summary(carbs_linear_model)
+
 ```
 
 
