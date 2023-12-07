@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## The Dataset
 
-Explanation here
+First, we grab the dataset and analyze the data.
 
 ```{r}
 library(tidyverse)
@@ -22,6 +22,7 @@ summary(starbucks_data)
 
 head(starbucks_data)
 ```
+We clean the data by changing the type of columns from characters to numbers.
 ```{r}
 numeric_columns <- c("Total.Fat..g.", "Caffeine..mg.")
 starbucks_data[numeric_columns] <- lapply(starbucks_data[numeric_columns], as.numeric)
@@ -35,7 +36,7 @@ starbucks_data[percentage_columns] <- lapply(starbucks_data[percentage_columns],
 str(starbucks_data)
 ```
 
-
+Here we make a bar graph where x is the number of calories and y is the frequency of beverages with x number of calories.
 ```{r}
 ggplot(starbucks_data, aes(x = Calories)) +
   geom_histogram(binwidth = 50, fill = "skyblue", color = "black") +
@@ -44,7 +45,7 @@ ggplot(starbucks_data, aes(x = Calories)) +
 ```
 
 
-
+We do more cleaning of the data by getting rid of the periods at the end of each column name and replacing them with one underscore.
 ```{r}
 starbucks_data <- starbucks_data %>%
   rename_all(~str_replace_all(., "[[:space:](.)]", "_"))
@@ -55,10 +56,14 @@ starbucks_data <- starbucks_data %>%
 starbucks_data <- starbucks_data %>%
   rename_all(~str_replace(., "_$", ""))
 
+# Drop rows with NA values
+starbucks_data <- na.omit(starbucks_data)
+
 print(colnames(starbucks_data))
 ```
+Here we make a correlation matrix with columns we believe would be great candidates for determining number of calories. Then we graphed scatterplots of the top 4 highest correlations with Calories. 
 ```{r}
-selected_columns <- c("Calories", "Total_Fat_g", "Sugars_g", "Total_Carbohydrates_g")
+selected_columns <- c("Sodium_mg", "Cholesterol_mg", "Dietary_Fibre_g", "Protein_g", "Calcium_DV", "Calories", "Total_Fat_g", "Sugars_g", "Total_Carbohydrates_g")
 selected_data <- starbucks_data[selected_columns]
 
 correlation_matrix <- cor(selected_data)
@@ -85,19 +90,15 @@ scatterplot_carbs <- ggplot(starbucks_data, aes(x = Total_Carbohydrates_g, y = C
        x = "Total Carbohydrates (g)", y = "Calories")
 scatterplot_carbs
 
-carbs_linear_model <- lm(Calories ~ Total_Carbohydrates_g, data = starbucks_data)
-
-#https://www.dunkindonuts.com/content/dam/dd/pdf/nutrition.pdf
-#new_data <- data.frame(Beverage = c("Original Hot Chocolate - Medium"), Total_Carbohydrates_g = c(59))
-
-#predicted_calories <- predict(carbs_linear_model, newdata = new_data)
-#print(predicted_calories)
-
-#summary(carbs_linear_model)
-
+scatterplot_cholesterol <- ggplot(starbucks_data, aes(x = Cholesterol_mg, y = Calories)) +
+  geom_point(color = "orange") +
+  geom_smooth(method = "lm", se = FALSE, color = "red") + 
+  labs(title = "Scatter Plot Matrix for Calories vs Cholesterol (mg)",
+       x = "Total Carbohydrates (g)", y = "Calories")
+scatterplot_cholesterol
 ```
 
-
+Here we make a boxplot where we graphed the number of calories in relation to the catagory of beverage.
 ```{r}
 boxplot_calories <- ggplot(starbucks_data, aes(x = Beverage_category, y = Calories, fill = Beverage_category)) +
   geom_boxplot() +
@@ -109,4 +110,44 @@ boxplot_calories <- ggplot(starbucks_data, aes(x = Beverage_category, y = Calori
 print(boxplot_calories)
 ```
 
+Lastly, we grabbed real data from a Dunkin' Donuts Nutrition document and tested our accuracy of calculating the number of calories.
+```{r}
+#https://www.dunkindonuts.com/content/dam/dd/pdf/nutrition.pdf
 
+carbs_linear_model <- lm(Calories ~ Total_Carbohydrates_g, data = starbucks_data)
+sugar_linear_model <- lm(Calories ~ Sugars_g, data = starbucks_data)
+fat_linear_model <- lm(Calories ~ Total_Fat_g, data = starbucks_data)
+#chole_linear_model <- lm(Calories ~ Cholesterol_mg, data = starbucks_data)
+multiple_linear_model <- lm(Calories ~ Total_Carbohydrates_g + Sugars_g + Total_Fat_g 
+                            #+ Cholesterol_mg
+                            , data = starbucks_data)
+
+new_data <- data.frame(
+  Beverage = c("Original Hot Chocolate - Medium", "Hot Coffee - Large", "Hot Coffee with Sugar - Medium", "French Vanilla Swirl Frozen Coffee with Cream - Large"), 
+  Calories = c(330, 5, 110, 1110), 
+  Total_Carbohydrates_g = c(59, 0, 26, 180), 
+  Total_Fat_g = c(10, 0, 0, 40), 
+  Sugars_g = c(46, 0, 26, 169)
+  #, Cholesterol_mg = c(0, 0, 0, 130)
+  )
+
+carb_predicted_calories <- predict(carbs_linear_model, newdata = new_data)
+sugar_predicted_calories <- predict(sugar_linear_model, newdata = new_data)
+fat_predicted_calories <- predict(fat_linear_model, newdata = new_data)
+#chole_predicted_calories <- predict(chole_linear_model, newdata = new_data)
+multi_predicted_calories <- predict(multiple_linear_model, newdata = new_data)
+
+new_data_with_predictions <- cbind(new_data$Beverage, new_data$Calories, 
+                                   #chole_predicted_calories, 
+                                   carb_predicted_calories, sugar_predicted_calories, fat_predicted_calories, multi_predicted_calories)
+
+colnames(new_data_with_predictions)[1] <- "Beverage"
+colnames(new_data_with_predictions)[2] <- "Calories"
+
+# Print the data frame with predicted calories
+new_data_with_predictions
+
+#summary(carbs_linear_model)
+
+```
+Unfortunately, we took out cholesterol from this table as the accuracy was greatly reduced with Cholesterol in. If you want to check it out, uncomment all rows relating to obtaining cholesterol predicted values.
