@@ -195,3 +195,6 @@ new_data_with_predictions
 
 ```
 Unfortunately, we took out cholesterol from this table as the accuracy was greatly reduced with Cholesterol in. If you want to check it out, uncomment all rows relating to obtaining cholesterol predicted values.
+
+### Conclusion
+The results revealed that carbohydrates, sugar, and fat content could somewhat accurately predict calorie count in fast-food beverages. However, it was observed that the inclusion of cholesterol levels lowered the accuracy of these predictions. Expanding this investigation to encompass a wider array of food categories could offer deeper insights into how different nutritional components affect calorie estimation, despite the potential impact of cholesterol on predictive accuracy.
