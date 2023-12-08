@@ -21,7 +21,9 @@ knitr::opts_chunk$set(echo = TRUE)
 > How do nutritional factors contribute to calorie count? We are going to predict how many calories are in any fast food coffee drink based on the combination of other factors that make up the drink. 
 
 ### Step 1: Data Loading and Inspection
-First, we grab the dataset and analyze the data. We want to undestand the structure and summary of our data set so we can properly clean or change it before further analyzation.
+First, we grab the dataset and analyze the data. We want to understand the structure and summary of our data set so we can properly clean or change it before further exploration. 
+
+We can already tell some column variable types need to change. Continue throught the report to see that below. 
 
 ```{r}
 library(tidyverse)
@@ -29,12 +31,15 @@ starbucks_data <- read.csv("starbucks.csv")
 
 str(starbucks_data)
 summary(starbucks_data)
+```
 
+There are a lot of variables to look at here. We have all the standard variables you see in nutritional facts such as the Calories, Vitamins, Fats, Cholesterol etc., which are goo variables to use for our further analysis of Calories. There are also beverage names, category and prep, which can be good to categorize our data later on.
+```{r}
 head(starbucks_data)
 ```
 
 ### Step 2: Data Cleaning and Transformation
-We clean the data by changing the type of columns from characters to numbers. This will be useful for calculations between variables later on.
+We clean the data by changing the type of columns from characters to numbers. This will be useful for calculations between variables later on. All of the vitamins were in percentages, so we take those divided by 100 to get their decimal proportion. 
 ```{r warning=FALSE}
 numeric_columns <- c("Total.Fat..g.", "Caffeine..mg.")
 starbucks_data[numeric_columns] <- lapply(starbucks_data[numeric_columns], as.numeric)
@@ -48,7 +53,7 @@ starbucks_data[percentage_columns] <- lapply(starbucks_data[percentage_columns],
 str(starbucks_data)
 ```
 
-We do more cleaning of the data by getting rid of the periods at the end of and in between each column name and replacing them with one underscore.
+We do more cleaning of the data by getting rid of the periods at the end of and in between each column name and replacing them with one simple underscore. This just helps with easier codding so we don't have to write out something like this: Total.Fat...g.
 ```{r}
 starbucks_data <- starbucks_data %>%
   rename_all(~str_replace_all(., "[[:space:](.)]", "_"))
@@ -76,6 +81,7 @@ ggplot(starbucks_data, aes(x = Calories)) +
 
 **Calories Histogram:** As you can see, the Calories follow a normal distribution, where there is maybe a potential outlier at the end past the 500 calorie mark. And we learned earlier in our summary code that the mean is 193.9 and the median is 185 for amount of Calories in a coffee.
 
+***
 
 **Boxplots:** Next, we make a boxplot where we graphed the number of calories in relation to the category of beverage.
 ```{r}
@@ -119,10 +125,14 @@ correlation_matrix <- cor(selected_data)
 print(correlation_matrix)
 ```
 
-Then we graphed scatterplots of the top 4 highest correlations with Calories. Why we coded our scatterplots:
-* Scatter plots are effective for visualizing relationships between two continuous variables. 
+Then we graphed scatterplots of the top 4 highest correlations with Calories. Why we coded our scatterplots the way we did:
+
+* Scatter plots are effective for visualizing relationships between two continuous variables.
+
 * Including a regression line helps identify trends and patterns in the data.
+
 * Different colors for data points aid in distinguishing between the plots and highlight specific nutrient relationships.
+
 ```{r}
 scatterplot_totalfat <- ggplot(starbucks_data, aes(x = Total_Fat_g, y = Calories)) +
   geom_point(color = "darkmagenta") +
@@ -130,31 +140,52 @@ scatterplot_totalfat <- ggplot(starbucks_data, aes(x = Total_Fat_g, y = Calories
   labs(title = "Scatter Plot Matrix for Calories vs Total Fat",
        x = "Total Fat (g)", y = "Calories")
 scatterplot_totalfat
+```
 
+As you can see, this scatterplot shows poor correlation. Points show that many drinks have little to no fat with a wide range of calories. Few points reach the line. 
+
+***
+
+```{r}
 scatterplot_sugar <- ggplot(starbucks_data, aes(x = Sugars_g, y = Calories)) +
   geom_point(color = "blue3") +
   geom_smooth(method = "lm", se = FALSE, color = "red") + 
   labs(title = "Scatter Plot Matrix for Calories vs Sugar",
        x = "Sugars (g)", y = "Calories")
 scatterplot_sugar
+```
 
+This regression fits well and many point fit the line. We hypothesized this would happen from the high correlation coefficient.
+
+***
+
+```{r}
 scatterplot_carbs <- ggplot(starbucks_data, aes(x = Total_Carbohydrates_g, y = Calories)) +
   geom_point(color = "darkgreen") +
   geom_smooth(method = "lm", se = FALSE, color = "red") + 
   labs(title = "Scatter Plot Matrix for Calories vs Total Carbohydrates (g)",
        x = "Total Carbohydrates (g)", y = "Calories")
 scatterplot_carbs
+```
 
+This regression line fits okay within the points given of Carbs by Calories. There are definitely some potential outliers in this case.
+
+***
+
+```{r}
 scatterplot_cholesterol <- ggplot(starbucks_data, aes(x = Cholesterol_mg, y = Calories)) +
   geom_point(color = "orange") +
   geom_smooth(method = "lm", se = FALSE, color = "red") + 
   labs(title = "Scatter Plot Matrix for Calories vs Cholesterol (mg)",
-       x = "Total Carbohydrates (g)", y = "Calories")
+       x = "Cholesterol (mg)", y = "Calories")
 scatterplot_cholesterol
 ```
 
+This regression line fits really well with the points for Cholesterol and Calories.
 
-Lastly, we grabbed real data from a Dunkin' Donuts Nutrition document and tested our accuracy of calculating the number of calories.
+***
+
+**Prediction Model:**Lastly, we grabbed real data from a Dunkin' Donuts Nutrition document and tested our accuracy of calculating the number of calories. Dunkin' Donuts is a similar coffee chain and a common competitor for Starbucks. So drinks from their menu are a great comparison for predicting new drinks' calories.
 ```{r}
 #https://www.dunkindonuts.com/content/dam/dd/pdf/nutrition.pdf
 
@@ -196,5 +227,13 @@ new_data_with_predictions
 ```
 Unfortunately, we took out cholesterol from this table as the accuracy was greatly reduced with Cholesterol in. If you want to check it out, uncomment all rows relating to obtaining cholesterol predicted values.
 
+We assume that the decrease in accuracy when adding cholesterol might be due to a multicollinearity issue, where the model struggles to tease apart the individual impacts of highly correlated variables, leading to overfitting and reduced predictive performance. So we decided our model worked better without it. 
+
+***
+
 ### Conclusion
 The results revealed that carbohydrates, sugar, and fat content could somewhat accurately predict calorie count in fast-food beverages. However, it was observed that the inclusion of cholesterol levels lowered the accuracy of these predictions. Expanding this investigation to encompass a wider array of food categories could offer deeper insights into how different nutritional components affect calorie estimation, despite the potential impact of cholesterol on predictive accuracy.
+
+The inclusion of highly correlated variables, such as cholesterol, posed challenges to our machine learning models. This led to potential redundancy and diminished accuracy due to overfitting.It reminded us of the intricacies involved in analyzing real-world datasets. It highlighted the importance of thoughtful variable selection and handling correlated features. Data cleaning and transformation played a crucial role in preparing the dataset for analysis. We renamed and standardized column names, handled missing values, and transformed variables to make them suitable for analysis. Correlation analyses unveiled relationships between nutritional components, helping us understand how total fat, sugars, and carbohydrates contribute to the caloric content of Starbucks beverages.The Starbucks project serves as a foundation for continuous exploration and refinement. Future analyses could delve deeper into specific beverage categories, customer preferences, or regional variations.
+
+In conclusion, the Starbucks project was not just about extracting nutritional insights but also navigating the nuances of data exploration, cleaning, and model interpretation. As we wrap up this phase of exploration, the project opens the door to further investigations and a deeper understanding of the intersection between consumer choices and nutritional content in the drinks we consume.
